@@ -25,3 +25,20 @@ module "secondary_infra" {
   public_cidr  = var.secondary_public_cidr
   private_cidr = var.secondary_private_cidr
 }
+
+module "transit_gateways" {
+  source               = "./modules/transit_gateways"
+
+  providers = {
+    aws.primary   = aws
+    aws.secondary = aws.secondary
+  }
+  primary_region       = var.primary_region
+  secondary_region     = var.secondary_region
+  primary_vpc_id       = module.primary_infra.vpc_id
+  secondary_vpc_id     = module.secondary_infra.vpc_id
+  primary_subnet_ids   = module.primary_infra.private_subnet_ids
+  secondary_subnet_ids = module.secondary_infra.private_subnet_ids
+  primary_vpc_cidr     = var.primary_vpc_cidr
+  secondary_vpc_cidr   = var.secondary_vpc_cidr
+}
