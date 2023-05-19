@@ -1,57 +1,38 @@
-variable "primary_region_name" {
-  description = "The name of the primary region."
+variable "primary_region" {
+  description = "Primary region for infrastructure"
 }
 
-variable "secondary_region_name" {
-  description = "The name of the secondary region."
+variable "secondary_region" {
+  description = "Secondary region for infrastructure"
 }
 
-resource "aws_s3_bucket" "primary_s3_bucket" {
-  bucket = "primary-slalom-website"
-
-  website {
-    index_document = "index.html"
+resource "aws_s3_bucket" "primary_bucket" {
+  bucket = "ski-chatgpt-primary-bucket-example"
+  tags = {
+    Name = "ski-chatgpt-infra-primary-bucket"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "primary_s3_bucket_access_block" {
-  bucket = aws_s3_bucket.primary_s3_bucket.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket" "secondary_s3_bucket" {
-  bucket = "secondary-slalom-website"
-
-  website {
-    index_document = "index.html"
+resource "aws_s3_bucket" "secondary_bucket" {
+ provider = aws.secondary
+  bucket  = "ski-chatgpt-secondary-bucket-example"
+  tags = {
+    Name = "ski-chatgpt-infra-secondary-bucket"
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "secondary_s3_bucket_access_block" {
-  bucket = aws_s3_bucket.secondary_s3_bucket.id
-
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
+output "primary_bucket_arn" {
+  value = aws_s3_bucket.primary_bucket.arn
 }
 
-output "primary_s3_bucket_id" {
-  value = aws_s3_bucket.primary_s3_bucket.id
+output "secondary_bucket_arn" {
+  value = aws_s3_bucket.secondary_bucket.arn
 }
 
-output "secondary_s3_bucket_id" {
-  value = aws_s3_bucket.secondary_s3_bucket.id
+output "primary_bucket_domain_name" {
+  value = aws_s3_bucket.primary_bucket.bucket_regional_domain_name
 }
 
-output "primary_region_domain_name" {
-  value = aws_s3_bucket.primary_s3_bucket.bucket_regional_domain_name
-}
-
-output "secondary_region_domain_name" {
-  value = aws_s3_bucket.secondary_s3_bucket.bucket_regional_domain_name
+output "secondary_bucket_domain_name" {
+  value = aws_s3_bucket.secondary_bucket.bucket_regional_domain_name
 }

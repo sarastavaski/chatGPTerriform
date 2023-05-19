@@ -42,3 +42,23 @@ module "transit_gateways" {
   primary_vpc_cidr     = var.primary_vpc_cidr
   secondary_vpc_cidr   = var.secondary_vpc_cidr
 }
+
+module "s3_buckets" {
+  source       = "./modules/s3_buckets"
+  providers = {
+    aws.primary   = aws
+    aws.secondary = aws.secondary
+  }
+  primary_region    = var.primary_region
+  secondary_region  = var.secondary_region
+}
+
+module "cloudfront" {
+  source               = "./modules/cloudfront"
+  primary_region       = var.primary_region
+  secondary_region     = var.secondary_region
+  primary_bucket_arn   = module.s3_buckets.primary_bucket_arn
+  secondary_bucket_arn = module.s3_buckets.secondary_bucket_arn
+  primary_bucket_domain_name = module.s3_buckets.primary_bucket_domain_name
+  secondary_bucket_domain_name = module.s3_buckets.secondary_bucket_domain_name
+}
