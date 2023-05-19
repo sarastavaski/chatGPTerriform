@@ -1,47 +1,47 @@
-variable "primary_s3_bucket_id" {
-  description = "The ID of the primary S3 bucket."
+variable "primary_region" {
+  description = "Primary region for infrastructure"
 }
 
-variable "secondary_s3_bucket_id" {
-  description = "The ID of the secondary S3 bucket."
+variable "secondary_region" {
+  description = "Secondary region for infrastructure"
 }
 
-variable "primary_region_domain_name" {
-  description = "The domain name of the primary region bucket."
+variable "primary_bucket_arn" {
+  description = "ARN of the primary S3 bucket"
 }
 
-variable "secondary_region_domain_name" {
-  description = "The domain name of the secondary region bucket."
+variable "secondary_bucket_arn" {
+  description = "ARN of the secondary S3 bucket"
 }
 
-resource "aws_cloudfront_distribution" "cloudfront_distribution" {
+variable "primary_bucket_domain_name" {
+  description = "Domain Name of the primary S3 bucket"
+}
+
+variable "secondary_bucket_domain_name" {
+  description = "Domain Name of the secondary S3 bucket"
+}
+
+resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
+  comment = "CloudFront Origin Access Identity"
+}
+
+resource "aws_cloudfront_distribution" "distribution" {
   origin {
-    domain_name = var.primary_region_domain_name
-    origin_id   = "primary"
-    s3_origin_config {
-      origin_access_identity = "origin-access-identity/cloudfront/${aws_cloudfront_origin_access_identity.primary_oai.id}"
-    }
+    domain_name = var.primary_bucket_domain_name
+    origin_id   = "primary-bucket"
   }
 
   origin {
-    domain_name = var.secondary_region_domain_name
-    origin_id   = "secondary"
-    s3_origin_config {
-      origin_access_identity = "origin-access-identity/cloudfront/${aws_cloudfront_origin_access_identity.secondary_oai.id}"
-    }
+    domain_name = var.secondary_bucket_domain_name
+    origin_id   = "secondary-bucket"
   }
-
-  enabled             = true
-  is_ipv6_enabled     = true
-  default_root_object = "index.html"
-
-  aliases = ["example.com"]
 
   default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
-    cached_methods   = ["GET", "HEAD", "OPTIONS"]
-    target_origin_id = "primary"
-
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "primary-bucket"
+    viewer_protocol_policy = "redirect-to-https"
     forwarded_values {
       query_string = false
       cookies {
@@ -52,19 +52,21 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
 
   ordered_cache_behavior {
     path_pattern     = "/index.html"
-    target_origin_id = "secondary"
-
+    target_origin_id = "secondary-bucket"
+    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
+    cached_methods         = ["GET", "HEAD", "OPTIONS"]
+    viewer_protocol_policy = "redirect-to-https"
     forwarded_values {
       query_string = false
       cookies {
         forward = "none"
       }
     }
-
-    min_ttl                = 0
-    default_ttl            = 0
-    max_ttl                = 0
   }
+
+  enabled             = true
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
 
   restrictions {
     geo_restriction {
@@ -74,5 +76,9 @@ resource "aws_cloudfront_distribution" "cloudfront_distribution" {
 
   viewer_certificate {
     cloudfront_default_certificate = true
+  }
+
+  tags = {
+    Name = "ski-chatgpt-infra-cloudfront"
   }
 }
